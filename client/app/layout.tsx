@@ -1,9 +1,13 @@
+import { Toaster } from "@/components/ui/toaster";
+import { SessionProvider } from "@/context/session";
+import { ThemeProvider } from "@/context/themeProvider";
+import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import { Inter as FontSans } from "next/font/google";
+import { cookies } from "next/headers";
 import "./globals.css";
-import { cn } from "@/lib/utils";
-import { ThemeProvider } from "@/context/themeProvider";
-import { Toaster } from "@/components/ui/toaster";
+import SibarMenu from "@/app/ui/sibarMenu";
+import Header from "@/app/ui/header";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -20,10 +24,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = cookies();
+  const accessToken = cookieStore.get("accessToken");
+  const refreshToken = cookieStore.get("refreshToken");
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
-      <body className={cn(fontSans.variable)}>
+      <body className={cn(fontSans.variable, "overflow-hidden")}>
         <Toaster />
         <ThemeProvider
           attribute="class"
@@ -31,7 +38,19 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <SessionProvider
+            accessToken={accessToken?.value}
+            refreshToken={refreshToken?.value}
+          >
+            <SibarMenu>
+              <div className="flex flex-col">
+                <Header />
+                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+                  {children}
+                </main>
+              </div>
+            </SibarMenu>
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>

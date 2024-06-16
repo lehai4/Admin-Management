@@ -15,10 +15,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { formLoginSchema } from "@/type";
 import { useToast } from "@/components/ui/use-toast";
+import { formLoginSchema } from "@/type";
+import { useRouter } from "next/navigation";
 
 export function LoginForm() {
+  const router = useRouter();
+
   const { toast } = useToast();
   const form = useForm<z.infer<typeof formLoginSchema>>({
     resolver: zodResolver(formLoginSchema),
@@ -28,11 +31,19 @@ export function LoginForm() {
     },
   });
 
-  // 2. Define a submit handler.
   const onSubmit = async (values: z.infer<typeof formLoginSchema>) => {
     try {
       const res = await authApiRequest.login(values);
-      const { accessToken, refreshToken } = res.result;
+      if (res?.result.statusCode === 401) {
+        toast({
+          title: "Error",
+          description: res?.result.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { accessToken, refreshToken } = res?.result;
 
       await authApiRequest.requestApiToNextServer({
         accessToken,
@@ -40,10 +51,11 @@ export function LoginForm() {
       });
 
       toast({
-        title: "Successfully",
-        description: res.result.message,
+        title: "Done",
+        description: "Login Successfully",
         variant: "default",
       });
+      router.push("/");
     } catch (err: any) {
       toast({
         title: "Error",
@@ -87,7 +99,14 @@ export function LoginForm() {
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <div className="mt-4 text-center text-sm w-full flex flex-col gap-4">
+          <Button type="submit" className="btn btn-submit w-full">
+            Login
+          </Button>
+          <Button variant="outline" className="btn btn-submit w-full">
+            Login with Google
+          </Button>
+        </div>
       </form>
     </Form>
   );

@@ -1,9 +1,33 @@
+import authApiRequest from "@/apiRequest/auth";
 import envConfig from "@/config";
-import { ErrorResponseLogin, TypeMethod } from "@/type";
+import { TypeMethod } from "@/type";
 import { redirect } from "next/navigation";
 type CustomOptions = RequestInit & {
   baseUrl?: string | undefined;
 };
+
+class AccessToken {
+  private accessToken = "";
+  get value() {
+    return this.accessToken;
+  }
+  set value(accessToken: string) {
+    this.accessToken = accessToken;
+  }
+}
+class RefreshToken {
+  private refreshToken = "";
+  get value() {
+    return this.refreshToken;
+  }
+  set value(refreshToken: string) {
+    this.refreshToken = refreshToken;
+  }
+}
+export const clientAccessToken = new AccessToken();
+export const clientRefreshToken = new RefreshToken();
+export const isClient = () => typeof window !== "undefined";
+
 export const request = async <Response>(
   method: TypeMethod,
   url: string,
@@ -18,6 +42,9 @@ export const request = async <Response>(
 
   const baseHeaders = {
     "Content-Type": "application/json",
+    Authorization: clientAccessToken.value
+      ? `Bearer ${clientAccessToken.value}`
+      : "",
   };
   const configUrl = url.startsWith("/")
     ? `${baseUrl}${url}`
@@ -32,15 +59,45 @@ export const request = async <Response>(
     body,
     method,
   });
-  const result: Response = await res.json();
+  const result: any = await res.json();
 
   const data = {
     status: res.status,
     result,
   };
   if (!res.ok) {
-    throw new Error("Invalid email or password");
+    if (res.status === 401) {
+      if (isClient()) {
+        await fetch("http://localhost:3000/api/auth/logout", {
+          method: "POST",
+          headers: {
+            ...baseHeaders,
+          },
+          body: JSON.stringify({ force: true }),
+        });
+
+        clientAccessToken.value = "";
+        clientRefreshToken.value = "";
+      } else {
+        const accessToken = (options?.headers as any).Authorization.split(
+          "Bearer "
+        )[1];
+        redirect(`/logout?accessToken=${accessToken}`);
+      }
+    }
+    if (res.status === 400) {
+      return;
+    }
   }
+
+  if (["/login"].includes(url)) {
+    clientAccessToken.value = result.accessToken;
+    clientRefreshToken.value = result.refreshToken;
+  } else if (["/logout"].includes(url)) {
+    clientAccessToken.value = "";
+    clientRefreshToken.value = "";
+  }
+
   return data;
 };
 

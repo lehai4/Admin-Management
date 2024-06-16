@@ -1,6 +1,9 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 
 export const POST = async (request: Request) => {
+  const cookiesList = cookies();
   try {
     const res = await request.json();
     const { accessToken, refreshToken } = res;
@@ -10,15 +13,22 @@ export const POST = async (request: Request) => {
         status: 400,
       });
     }
-    return Response.json(
-      { message: "Successfully!" },
-      {
-        status: 200,
-        headers: {
-          "Set-Cookie": `token=${accessToken}; Path=/; HttpOnly`,
-        },
-      }
-    );
+
+    cookiesList.set({
+      name: "accessToken",
+      value: accessToken,
+      secure: true,
+      httpOnly: true,
+      path: "/",
+    });
+    cookiesList.set({
+      name: "refreshToken",
+      value: refreshToken,
+      secure: true,
+      httpOnly: true,
+      path: "/",
+    });
+    return NextResponse.json({ accessToken, refreshToken }, { status: 200 });
   } catch (error) {
     redirect(`/errors/err=${error}`);
   }
