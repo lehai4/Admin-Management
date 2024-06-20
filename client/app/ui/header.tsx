@@ -1,5 +1,4 @@
 "use client";
-import { profileApiRequest } from "@/apiRequest/profile";
 import AvatarUser from "@/app/ui/avatar";
 import {
   DropdownMenu,
@@ -9,24 +8,34 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ResponseProfile } from "@/type";
-import { useEffect, useState } from "react";
-const Header = () => {
-  const [profile, setProfile] = useState<ResponseProfile | undefined>();
-  useEffect(() => {
-    (async function getProfile() {
-      const res = await profileApiRequest.profileClient();
-      setProfile(res?.result);
-    })();
-  }, []);
+import { useUserContext } from "@/context/userProvider";
+import { clientAccessToken, clientRefreshToken } from "@/lib/http";
+import { useRouter } from "next/navigation";
 
+const Header = () => {
+  const router = useRouter();
+  const { user, setUser } = useUserContext();
+  const accessToken = clientAccessToken.value;
+  const refreshToken = clientRefreshToken.value;
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      body: JSON.stringify({ accessToken, refreshToken }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    setUser(undefined);
+    router.push("/login");
+  };
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
       <div className="w-full flex-1"></div>
       <DropdownMenu>
         <DropdownMenuTrigger>
           <div className="flex flex-row items-center gap-2">
-            {profile?.role ? profile?.role : "No Role"}
+            {user ? user?.role : "No role"}
             <AvatarUser />
           </div>
         </DropdownMenuTrigger>
@@ -36,7 +45,7 @@ const Header = () => {
           <DropdownMenuItem>Settings</DropdownMenuItem>
           <DropdownMenuItem>Support</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>Logout</DropdownMenuItem>
+          <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>

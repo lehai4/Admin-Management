@@ -28,7 +28,11 @@ const LogoutPage = () => {
       controller.abort();
     };
   }, [accessToken, router, pathname]);
-  return <div>Page</div>;
+  return (
+    <div>
+      <h1 className="text-red-500 font-lg">Logout</h1>
+    </div>
+  );
 };
 
 export default LogoutPage;

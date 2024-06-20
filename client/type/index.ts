@@ -66,3 +66,4 @@ export interface ResponseProduct {
 
 export type ProductType = ResponseProduct;
 export type CategoryType = ResponseCategory;
+export type ProfileType = ResponseProfile;

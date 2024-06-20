@@ -8,31 +8,6 @@ const authApiRequest = {
 
   logout: () => http.post<any>("/logout", null),
 
-  logoutFromNextClientToNextServer: (
-    force?: boolean | undefined,
-    signal?: AbortSignal | undefined
-  ) =>
-    http.post<any>(
-      "/api/auth/logout",
-      {
-        force,
-      },
-      {
-        baseUrl: "",
-        signal,
-      }
-    ),
-  logoutFromNextServerToServerBackend: (accessToken: string) =>
-    http.post<any>(
-      "/logout",
-      {},
-      {
-        headers: {
-          Authorization: "Bearer " + accessToken,
-        },
-      }
-    ),
-
   requestApiToNextServer: (body: ResponseLoginType) =>
     http.post<any>("/api/auth", body, {
       baseUrl: "",

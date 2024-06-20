@@ -10,9 +10,7 @@ const PageProfile = () => {
       const res = await profileApiRequest.profileClient();
       setProfile(res?.result);
     };
-    return () => {
-      getProfile();
-    };
+    getProfile();
   }, []);
   return (
     <div>

@@ -59,37 +59,61 @@ export const request = async <Response>(
     body,
     method,
   });
+
+  // res.ok = false
+  if (!res.ok) {
+    if (res.status === 401) {
+      if (isClient()) {
+        const newToken = await fetch(
+          `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/refresh`,
+          {
+            method: "POST",
+            headers: {
+              ...baseHeaders,
+            },
+            body: JSON.stringify({ refreshToken: clientRefreshToken.value }),
+          }
+        ).then((res) => res.json());
+
+        const { accessToken, refreshToken } = newToken;
+
+        await fetch("http://localhost:3000/api/auth", {
+          method: "POST",
+          headers: {
+            ...baseHeaders,
+          },
+          body: JSON.stringify({
+            accessToken,
+            refreshToken,
+          }),
+        });
+        clientAccessToken.value = accessToken;
+        clientRefreshToken.value = refreshToken;
+      } else {
+        console.log("Call Not Server");
+      }
+    }
+    if (res.status === 400) {
+      throw new Error("Error 400");
+    }
+    throw new Error("Errors");
+  }
+  // res.ok = true
+  if (res.status === 204) {
+    return {
+      status: 204,
+      result: {
+        message: "Delete Successfully!",
+      },
+    };
+  }
+
   const result: any = await res.json();
 
   const data = {
     status: res.status,
     result,
   };
-  if (!res.ok) {
-    if (res.status === 401) {
-      if (isClient()) {
-        await fetch("http://localhost:3000/api/auth/logout", {
-          method: "POST",
-          headers: {
-            ...baseHeaders,
-          },
-          body: JSON.stringify({ force: true }),
-        });
-
-        clientAccessToken.value = "";
-        clientRefreshToken.value = "";
-      } else {
-        const accessToken = (options?.headers as any).Authorization.split(
-          "Bearer "
-        )[1];
-        redirect(`/logout?accessToken=${accessToken}`);
-      }
-    }
-    if (res.status === 400) {
-      return;
-    }
-  }
-
   if (["/login"].includes(url)) {
     clientAccessToken.value = result.accessToken;
     clientRefreshToken.value = result.refreshToken;
@@ -97,7 +121,6 @@ export const request = async <Response>(
     clientAccessToken.value = "";
     clientRefreshToken.value = "";
   }
-
   return data;
 };
 
@@ -108,6 +131,8 @@ const http = {
   post<Response>(url: string, body: any, options?: CustomOptions | undefined) {
     return request<Response>("POST", url, { ...options, body });
   },
+  delete<Response>(url: string, options?: CustomOptions | undefined) {
+    return request<Response>("DELETE", url, options);
+  },
 };
-export const { get, post } = http;
 export default http;

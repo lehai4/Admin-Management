@@ -1,26 +1,8 @@
-import authApiRequest from "@/apiRequest/auth";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-
+import envConfig from "@/config";
 export const POST = async (request: Request) => {
   const cookieStore = cookies();
-  const accessToken = cookieStore.get("accessToken")?.value as string;
-  const refreshToken = cookieStore.get("refreshToken")?.value;
-  const res = await request.json();
-  const force = res.force as boolean | undefined;
-
-  if (force) {
-    cookieStore.delete("accessToken");
-    cookieStore.delete("refreshToken");
-    return Response.json(
-      {
-        message: "Logout Successfully!",
-      },
-      {
-        status: 200,
-      }
-    );
-  }
+  const { accessToken, refreshToken } = await request.json();
 
   if (!accessToken && !refreshToken) {
     return new Response("accessToken && refreshToken not exist!", {
@@ -29,14 +11,20 @@ export const POST = async (request: Request) => {
   }
 
   try {
-    const res = await authApiRequest.logoutFromNextServerToServerBackend(
-      accessToken
-    );
+    await fetch(`${envConfig.NEXT_PUBLIC_API_ENDPOINT}/logout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ refreshToken }),
+    }).then((data) => data);
 
-    return Response.json(res?.result, {
-      status: 200,
-    });
+    cookieStore.delete("accessToken");
+    cookieStore.delete("refreshToken");
+
+    return Response.json({ status: 200, message: "Logout Successfully!" });
   } catch (error) {
-    redirect(`/errors/err=${error}`);
+    throw new Error("Logout Failed");
   }
 };

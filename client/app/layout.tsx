@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import SibarMenu from "@/app/ui/sibarMenu";
 import Header from "@/app/ui/header";
+import UserProvider from "@/context/userProvider";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -42,14 +43,16 @@ export default function RootLayout({
             accessToken={accessToken?.value}
             refreshToken={refreshToken?.value}
           >
-            <SibarMenu>
-              <div className="flex flex-col">
-                <Header />
-                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-                  {children}
-                </main>
-              </div>
-            </SibarMenu>
+            <UserProvider>
+              <SibarMenu>
+                <div className="flex flex-col">
+                  <Header />
+                  <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+                    {children}
+                  </main>
+                </div>
+              </SibarMenu>
+            </UserProvider>
           </SessionProvider>
         </ThemeProvider>
       </body>

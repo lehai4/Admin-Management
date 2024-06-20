@@ -18,11 +18,14 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { formLoginSchema } from "@/type";
 import { useRouter } from "next/navigation";
+import { useUserContext } from "@/context/userProvider";
+import { profileApiRequest } from "@/apiRequest/profile";
 
 export function LoginForm() {
+  const { setUser } = useUserContext();
   const router = useRouter();
-
   const { toast } = useToast();
+
   const form = useForm<z.infer<typeof formLoginSchema>>({
     resolver: zodResolver(formLoginSchema),
     defaultValues: {
@@ -49,6 +52,8 @@ export function LoginForm() {
         accessToken,
         refreshToken,
       });
+      const response = await profileApiRequest.profileClient();
+      setUser(response?.result);
 
       toast({
         title: "Done",
