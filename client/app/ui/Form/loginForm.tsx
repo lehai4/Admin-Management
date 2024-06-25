@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import authApiRequest from "@/apiRequest/auth";
+import { profileApiRequest } from "@/apiRequest/profile";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -18,11 +19,11 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { formLoginSchema } from "@/type";
 import { useRouter } from "next/navigation";
-import { useUserContext } from "@/context/userProvider";
-import { profileApiRequest } from "@/apiRequest/profile";
+import { useAppDispatch } from "@/lib/hook";
+import { setUser } from "@/app/redux/slice/userSlice";
 
 export function LoginForm() {
-  const { setUser } = useUserContext();
+  const dispath = useAppDispatch();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -53,7 +54,8 @@ export function LoginForm() {
         refreshToken,
       });
       const response = await profileApiRequest.profileClient();
-      setUser(response?.result);
+
+      dispath(setUser(response.result));
 
       toast({
         title: "Done",

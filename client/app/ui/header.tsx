@@ -1,4 +1,5 @@
 "use client";
+import { setUser } from "@/app/redux/slice/userSlice";
 import AvatarUser from "@/app/ui/avatar";
 import {
   DropdownMenu,
@@ -8,13 +9,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useUserContext } from "@/context/userProvider";
+import { useToast } from "@/components/ui/use-toast";
+import { useAppDispatch, useAppSelector } from "@/lib/hook";
 import { clientAccessToken, clientRefreshToken } from "@/lib/http";
 import { useRouter } from "next/navigation";
 
 const Header = () => {
+  const { toast } = useToast();
   const router = useRouter();
-  const { user, setUser } = useUserContext();
+  const dispath = useAppDispatch();
+  const user = useAppSelector((state) => state.profileUser.user);
   const accessToken = clientAccessToken.value;
   const refreshToken = clientRefreshToken.value;
 
@@ -26,7 +30,10 @@ const Header = () => {
         "Content-Type": "application/json",
       },
     });
-    setUser(undefined);
+    dispath(setUser(null));
+    toast({
+      description: "Logout successfully!",
+    });
     router.push("/login");
   };
   return (

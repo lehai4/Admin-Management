@@ -16,17 +16,9 @@ import {
 import * as React from "react";
 
 import { productApiRequest } from "@/apiRequest/product";
+import { openModal } from "@/app/redux/slice/modalSlice";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -47,13 +39,18 @@ import { ProductType } from "@/type";
 import { Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { useAppSelector } from "@/lib/hook";
+import { UploadImage } from "@/app/ui/modal/uploadImage";
 
 const ProductUI = ({ product }: { product: ProductType[] }) => {
   const { toast } = useToast();
-  const inputFile = React.useRef<HTMLInputElement>(null);
+  const dispatch = useDispatch();
+  const { isModalOpen }: { isModalOpen: boolean } = useAppSelector(
+    (store) => store.modal
+  );
 
-  const [image, setImage] = useState(null);
-  const [file, setFile] = useState<string>();
+  const [editedID, setEditedID] = useState<string>("");
   const [productArr, setProductArr] = React.useState<ProductType[]>(product);
 
   const [columnVisibility, setColumnVisibility] =
@@ -92,7 +89,7 @@ const ProductUI = ({ product }: { product: ProductType[] }) => {
     {
       accessorKey: "id",
       header: "Id",
-      cell: ({ row }) => <div className="capitalize">{row.getValue("id")}</div>,
+      cell: ({ row }) => <div>{row.getValue("id")}</div>,
     },
     {
       accessorKey: "picture",
@@ -106,39 +103,11 @@ const ProductUI = ({ product }: { product: ProductType[] }) => {
           }
           width="60"
           height="60"
+          onClick={() => {
+            setEditedID(row.getValue("id"));
+            dispatch(openModal());
+          }}
         />
-        // <Dialog>
-        //   <DialogTrigger>
-
-        //   </DialogTrigger>
-        //   <DialogContent className="sm:max-w-[425px]">
-        //     <DialogHeader>
-        //       <DialogTitle>Edit picture</DialogTitle>
-        //       <DialogDescription>
-        //         Make changes to your picute product here. Click save when you're
-        //         done.
-        //       </DialogDescription>
-        //     </DialogHeader>
-        //     <div className="grid gap-4 py-4">
-        //       <input
-        //         type="file"
-        //         accept="image/*"
-        //         ref={inputFile}
-        //         multiple={false}
-        //         onChange={handleChangeImage}
-        //       />
-        //       {file && <img src={file} />}
-        //     </div>
-        //     <DialogFooter>
-        //       <Button
-        //         type="submit"
-        //         onClick={() => onUploadPicture(row.getValue("id"))}
-        //       >
-        //         Save changes
-        //       </Button>
-        //     </DialogFooter>
-        //   </DialogContent>
-        // </Dialog>
       ),
     },
     {
@@ -188,7 +157,7 @@ const ProductUI = ({ product }: { product: ProductType[] }) => {
       cell: ({ row }) => {
         const catelog: any = row.getValue("categories");
         return catelog.map((category: { name: string }, index: number) => (
-          <p key={index}>{category.name}</p>
+          <p key={index}>{category.name ? category.name : "No category"}</p>
         ));
       },
     },
@@ -232,41 +201,11 @@ const ProductUI = ({ product }: { product: ProductType[] }) => {
     },
   });
 
-  const onUploadPicture = async (id: string) => {
-    if (!image) {
-      toast({
-        title: "Error",
-        description: "Please choose image for upload",
-      });
-      return;
-    }
-    const formData = new FormData();
-    formData.append("file", image);
-    setFile(undefined);
-    if (inputFile.current) {
-      (inputFile.current as any).value = "";
-      (inputFile.current as any).type = "text";
-      (inputFile.current as any).type = "file";
-    }
-    await productApiRequest.uploadPicture(id, formData);
-  };
-
-  const handleChangeImage = (event: any) => {
-    const file = event.target.files[0];
-    if (file.size > 3 * 1024 * 1024) {
-      alert("Kích thước ảnh vượt quá 3MB.");
-      return;
-    } else {
-      const Blob = URL.createObjectURL(file);
-      setFile(Blob);
-      setImage(file);
-    }
-  };
   const handleDelete = async (id: string) => {
     const res = await productApiRequest.deleteProduct(id);
     toast({
       title: "Done!",
-      description: res.result.message,
+      description: res?.result.message,
     });
     const product = await productApiRequest.getProduct();
     setProductArr(product?.result);
@@ -386,6 +325,7 @@ const ProductUI = ({ product }: { product: ProductType[] }) => {
           </Button>
         </div>
       </div>
+      {isModalOpen && <UploadImage editedID={editedID} />}
     </div>
   );
 };

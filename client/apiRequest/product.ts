@@ -4,9 +4,10 @@ import { ResponseProduct } from "@/type";
 export const productApiRequest = {
   getProduct: () => http.get<ResponseProduct>(`/product`),
   uploadPicture: (id: string, formData: FormData) =>
-    http.post<FormData>(`/product/picture/${id}`, formData, {
+    http.put<FormData>(`/product/picture/${id}`, formData, {
       headers: {
-        "Content-type": "application/x-www-form-urlencoded",
+        accept: "application/json",
+        "Content-Type": "multipart/form-data",
       },
     }),
   deleteProduct: (id: string) =>
