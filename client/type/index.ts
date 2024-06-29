@@ -1,4 +1,5 @@
 import { z } from "zod";
+import * as yup from "yup";
 
 export const formLoginSchema = z.object({
   email: z
@@ -15,7 +16,39 @@ export const formSearchSchema = z.object({
   product: z.string({ message: "Please enter product!" }),
 });
 
-export type TypeMethod = "GET" | "POST" | "PUT" | "DELETE";
+export const formEditProductSchema = yup.object({
+  name: yup.string().required(),
+  basePrice: yup.string().required(),
+  discountPercentage: yup.number().required(),
+  stock: yup.number().required(),
+  description: yup.string().required(),
+});
+
+export const formCreateProductSchema = yup.object({
+  name: yup.string().required(),
+  basePrice: yup.number().required(),
+  discountPercentage: yup.number().required(),
+  stock: yup.number().required(),
+  description: yup.string().required(),
+  categories: yup.string().required(),
+});
+
+export type EditProductSchema = {
+  name: string;
+  basePrice: string;
+  discountPercentage: number;
+  stock: number;
+  description: string;
+};
+export type CreateProductSchema = {
+  name: string;
+  basePrice: number;
+  discountPercentage: number;
+  stock: number;
+  description: string;
+  categories: string;
+};
+export type TypeMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export interface LoginTypeof {
   email: string;
@@ -55,6 +88,7 @@ export interface ResponseProduct {
   name: string;
   picture: string | null;
   basePrice: string;
+  urlName: string;
   discountPercentage: number;
   stock: number;
   description: string;
@@ -63,7 +97,10 @@ export interface ResponseProduct {
     name: string;
   }[];
 }
-
+export interface Category {
+  id: string;
+  name: string;
+}
 export type ProductType = ResponseProduct;
 export type CategoryType = ResponseCategory;
 export type ProfileType = ResponseProfile;

@@ -40,13 +40,13 @@ export const UploadImage = ({ editedID }: { editedID: string }) => {
     const res = await fetch(
       `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/product/picture/${editedID}`,
       {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           accept: "application/json",
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${clientAccessToken.value}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ formData }),
       }
     );
     if (!res.ok) {

@@ -162,6 +162,9 @@ const http = {
   put<Response>(url: string, body: any, options?: CustomOptions | undefined) {
     return request<Response>("PUT", url, { ...options, body });
   },
+  patch<Response>(url: string, body: any, options?: CustomOptions | undefined) {
+    return request<Response>("PATCH", url, { ...options, body });
+  },
   delete<Response>(url: string, options?: CustomOptions | undefined) {
     return request<Response>("DELETE", url, options);
   },

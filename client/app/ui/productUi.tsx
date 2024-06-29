@@ -1,5 +1,5 @@
 "use client";
-
+import http from "@/lib/http";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import {
   ColumnDef,
@@ -13,10 +13,10 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import * as React from "react";
 
 import { productApiRequest } from "@/apiRequest/product";
 import { openModal } from "@/app/redux/slice/modalSlice";
+import { UploadImage } from "@/app/ui/modal/uploadImage";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -35,33 +35,44 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/components/ui/use-toast";
-import { ProductType } from "@/type";
+import { useAppSelector } from "@/lib/hook";
+import { ProductType, ResponseProduct } from "@/type";
 import { Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { useAppSelector } from "@/lib/hook";
-import { UploadImage } from "@/app/ui/modal/uploadImage";
 
-const ProductUI = ({ product }: { product: ProductType[] }) => {
+import envConfig from "@/config";
+import useSWR from "swr";
+
+const fetcher = () => http.get<ResponseProduct>("/product");
+
+const ProductUI = () => {
   const { toast } = useToast();
   const dispatch = useDispatch();
+
+  const { data, error, isLoading } = useSWR(
+    `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/product`,
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnMount: true,
+      revalidateOnFocus: true,
+    }
+  );
+
   const { isModalOpen }: { isModalOpen: boolean } = useAppSelector(
     (store) => store.modal
   );
-
-  const [editedID, setEditedID] = useState<string>("");
-  const [productArr, setProductArr] = React.useState<ProductType[]>(product);
-
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = React.useState({});
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+  const [products, setProducts] = useState<ProductType[]>(
+    data?.result ? data.result : []
   );
+  const [editedID, setEditedID] = useState<string>("");
 
-  const data: ProductType[] = productArr;
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState({});
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   const columns: ColumnDef<ProductType>[] = [
     {
@@ -87,11 +98,6 @@ const ProductUI = ({ product }: { product: ProductType[] }) => {
       enableHiding: false,
     },
     {
-      accessorKey: "id",
-      header: "Id",
-      cell: ({ row }) => <div>{row.getValue("id")}</div>,
-    },
-    {
       accessorKey: "picture",
       header: "Picture",
       cell: ({ row }) => (
@@ -110,6 +116,17 @@ const ProductUI = ({ product }: { product: ProductType[] }) => {
         />
       ),
     },
+    {
+      accessorKey: "id",
+      header: "Id",
+      cell: ({ row }) => <div>{row.getValue("id")}</div>,
+    },
+    {
+      accessorKey: "urlName",
+      header: "UrlName",
+      cell: ({ row }) => <div>{row.getValue("urlName")}</div>,
+    },
+
     {
       accessorKey: "name",
       header: "Name",
@@ -166,10 +183,12 @@ const ProductUI = ({ product }: { product: ProductType[] }) => {
       enableHiding: false,
       cell: ({ row }) => (
         <div className="flex flex-row items-center gap-4">
-          <Button variant={"edit"} className="flex flex-row gap-1">
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
+          <Link href={`/product/edit/${row.getValue("urlName")}`}>
+            <Button variant={"edit"} className="flex flex-row gap-1">
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Button>
+          </Link>
           <Button
             variant={"destructive"}
             className="flex flex-row gap-1"
@@ -182,8 +201,9 @@ const ProductUI = ({ product }: { product: ProductType[] }) => {
       ),
     },
   ];
+
   const table = useReactTable({
-    data,
+    data: products,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -208,8 +228,14 @@ const ProductUI = ({ product }: { product: ProductType[] }) => {
       description: res?.result.message,
     });
     const product = await productApiRequest.getProduct();
-    setProductArr(product?.result);
+    setProducts(product?.result);
   };
+
+  useEffect(() => {
+    data !== undefined && setProducts(data?.result);
+  }, [data]);
+
+  if (error) return "Error";
   return (
     <div className="w-full">
       <div className="flex items-center py-4 gap-5">

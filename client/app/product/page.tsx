@@ -1,12 +1,10 @@
-import { productApiRequest } from "@/apiRequest/product";
 import ProductUI from "@/app/ui/productUi";
 
-const ProductPage = async () => {
-  const product = await productApiRequest.getProduct();
+const ProductPage = () => {
   return (
     <>
       <h1 className="text-[30px] font-semibold">Product</h1>
-      <ProductUI product={product?.result} />
+      <ProductUI />
     </>
   );
 };
