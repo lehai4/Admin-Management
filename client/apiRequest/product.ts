@@ -1,9 +1,5 @@
 import http from "@/lib/http";
-import {
-  CreateProductSchema,
-  EditProductSchema,
-  ResponseProduct,
-} from "@/type";
+import { ResponseProduct } from "@/type";
 
 export const productApiRequest = {
   getProduct: () => http.get<ResponseProduct>(`/product?page=1&offset=10`),
@@ -39,12 +35,7 @@ export const productApiRequest = {
     }>(`/product/${id}`, body),
 
   uploadPicture: (id: string, formData: FormData) =>
-    http.put<FormData>(`/product/picture/${id}`, formData, {
-      headers: {
-        accept: "application/json",
-        "Content-Type": "multipart/form-data",
-      },
-    }),
+    http.patch(`/product/picture/${id}`, formData),
 
   deleteProduct: (id: string) =>
     http.delete(`/product/${id}`, {

@@ -33,19 +33,30 @@ export const request = async <Response>(
   url: string,
   options?: CustomOptions
 ) => {
-  const body = options?.body ? JSON.stringify(options?.body) : undefined;
+  const body = options?.body
+    ? options.body instanceof FormData
+      ? options?.body
+      : JSON.stringify(options?.body)
+    : undefined;
 
   const baseUrl =
     options?.baseUrl === undefined
       ? envConfig.NEXT_PUBLIC_API_ENDPOINT
       : options.baseUrl;
 
-  const baseHeaders = {
-    "Content-Type": "application/json",
-    Authorization: clientAccessToken.value
-      ? `Bearer ${clientAccessToken.value}`
-      : "",
-  };
+  const baseHeaders =
+    body instanceof FormData
+      ? {
+          Authorization: clientAccessToken.value
+            ? `Bearer ${clientAccessToken.value}`
+            : "",
+        }
+      : {
+          "Content-Type": "application/json",
+          Authorization: clientAccessToken.value
+            ? `Bearer ${clientAccessToken.value}`
+            : "",
+        };
   const configUrl = url.startsWith("/")
     ? `${baseUrl}${url}`
     : `${baseUrl}/${url}`;
@@ -55,7 +66,7 @@ export const request = async <Response>(
     headers: {
       ...baseHeaders,
       ...options?.headers,
-    },
+    } as any,
     body,
     method,
   });
@@ -70,7 +81,7 @@ export const request = async <Response>(
             method: "POST",
             headers: {
               ...baseHeaders,
-            },
+            } as any,
             body: JSON.stringify({ refreshToken: clientRefreshToken.value }),
           }
         ).then((res) => res.json());
@@ -81,7 +92,7 @@ export const request = async <Response>(
           method: "POST",
           headers: {
             ...baseHeaders,
-          },
+          } as any,
           body: JSON.stringify({
             accessToken,
             refreshToken,

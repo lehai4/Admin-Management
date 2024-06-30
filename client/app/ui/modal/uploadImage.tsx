@@ -1,27 +1,23 @@
 "use client";
 import { productApiRequest } from "@/apiRequest/product";
 import { closeModal } from "@/app/redux/slice/modalSlice";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import envConfig from "@/config";
 import { useAppDispatch } from "@/lib/hook";
-import { clientAccessToken } from "@/lib/http";
 import { CircleX } from "lucide-react";
-import { useState } from "react";
+import Image from "next/image";
+import { useRef, useState } from "react";
 
 export const UploadImage = ({ editedID }: { editedID: string }) => {
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const { toast } = useToast();
   const dispatch = useAppDispatch();
-  const [image, setImage] = useState(null);
+  const [image, setImage] = useState<any>(null);
 
   const handleImageChange = (event: any) => {
-    const file = event.target.files[0];
-    if (file.size > 2 * 1024 * 1024) {
-      // > 2mb
-      alert("Kích thước ảnh vượt quá 2MB.");
-      return;
-    } else {
-      setImage(file);
-    }
+    const file = event.target.files?.[0];
+
+    setImage(file);
   };
 
   const handleUpload = async () => {
@@ -34,34 +30,17 @@ export const UploadImage = ({ editedID }: { editedID: string }) => {
       return;
     }
     const formData = new FormData();
-    formData.append("file", image);
 
-    // const res = await productApiRequest.uploadPicture(editedID, formData);
-    const res = await fetch(
-      `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/product/picture/${editedID}`,
-      {
-        method: "PATCH",
-        headers: {
-          accept: "application/json",
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${clientAccessToken.value}`,
-        },
-        body: JSON.stringify({ formData }),
-      }
-    );
-    if (!res.ok) {
-      toast({
-        title: "Error",
-        description: "Can't call api for upload image",
-        variant: "destructive",
-      });
-    }
+    formData.append("file", image as Blob);
+
+    await productApiRequest.uploadPicture(editedID, formData);
+
     toast({
       title: "Done",
       description: "Upload image successfully!",
       variant: "default",
     });
-    // dispatch(closeModal());
+    dispatch(closeModal());
   };
   return (
     <div className="fixed top-0 left-0 bottom-0 right-0 bg-black bg-opacity-70 z-30 flex justify-center items-center">
@@ -81,6 +60,12 @@ export const UploadImage = ({ editedID }: { editedID: string }) => {
             type="file"
             accept="image/*"
             onChange={handleImageChange}
+            ref={inputRef}
+            onClick={() => {
+              if (inputRef.current) {
+                inputRef.current.value = "";
+              }
+            }}
             className="w-fit cursor-pointer text-[#303f9f]"
           />
           <button
@@ -90,6 +75,29 @@ export const UploadImage = ({ editedID }: { editedID: string }) => {
             Save
           </button>
         </div>
+        {image && (
+          <div className="mt-[20px] flex flex-col gap-2">
+            <Image
+              src={URL.createObjectURL(image)}
+              alt={`${image?.name}`}
+              width={128}
+              height={128}
+              className="w-full h-[200px]"
+              quality={100}
+            />
+            <Button
+              variant={"destructive"}
+              onClick={() => {
+                setImage(null);
+                if (inputRef.current) {
+                  inputRef.current.value = "";
+                }
+              }}
+            >
+              Delete Image
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
